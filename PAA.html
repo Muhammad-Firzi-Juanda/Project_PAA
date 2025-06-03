@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigasi Peta dengan Gambar - Full Screen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .header h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: bold;
+            min-width: 180px;
+            text-align: center;
+        }
+
+        .file-input-wrapper:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 120px;
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(45deg, #f44336, #da190b);
+            color: white;
+        }
+
+        .btn-random {
+            background: linear-gradient(45deg, #FF9800, #e68900);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .threshold-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 8px 15px;
+            border-radius: 8px;
+        }
+
+        .threshold-control input[type="range"] {
+            width: 150px;
+        }
+
+        .threshold-control label {
+            font-weight: bold;
+            color: #333;
+            font-size: 12px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #gameCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            border: 2px solid #333;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+        }
+
+        .status {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .info-section {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-section p {
+            color: #666;
+            font-size: 12px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .file-status {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .empty-canvas {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-canvas i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+            }
+
+            .controls-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn, .file-input-wrapper {
+                min-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ Navigasi Peta dengan Gambar</h1>
+        
+        <div class="controls-row">
+            <div class="file-input-wrapper">
+                🖼️ Pilih Gambar Peta
+                <input type="file" id="mapImageInput" accept="image/*">
+            </div>
+
+            
+
+            <button class="btn btn-start" id="startBtn">🚀 Start</button>
+            <button class="btn btn-stop" id="stopBtn">⏹️ Stop</button>
+            <button class="btn btn-random" id="randomBtn">🎲 Acak</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+            <div class="empty-canvas" id="emptyCanvas">
+                <div>
+                    <i>🗺️</i>
+                    <div>Upload gambar peta untuk memulai navigasi</div>
+                    <div style="font-size: 14px; margin-top: 10px; color: #aaa;">
+                        Gambar akan otomatis dianalisis untuk mendeteksi jalan
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="status" id="statusText">Siap untuk memuat gambar peta!</div>
+
+            <div class="file-status" id="imageStatus">Belum ada gambar dipilih</div>
+
+            <div class="info-section">
+                <h3>📋 Cara Penggunaan:</h3>
+                <p>1. Klik "🖼️ Pilih Gambar Peta" untuk upload</p>
+                <p>2. Jalan akan terdeteksi otomatis</p>
+                <p>3. Klik pada canvas untuk set posisi player</p>
+                <p>4. Ctrl+Klik untuk set tujuan</p>
+                <p>5. Klik "Start" untuk mulai navigasi</p>
+                <p>6. Sesuaikan threshold jika deteksi kurang akurat</p>
+            </div>
+
+            <div class="info-section">
+                <h3>🎮 Kontrol:</h3>
+                <p><strong>Klik:</strong> Set posisi player</p>
+                <p><strong>Ctrl+Klik:</strong> Set tujuan</p>
+                <p><strong>Start:</strong> Mulai navigasi</p>
+                <p><strong>Stop:</strong> Hentikan navigasi</p>
+                <p><strong>Acak:</strong> Posisi acak</p>
+            </div>
+
+            <div class="info-section">
+                <h3>⚙️ Tips:</h3>
+                <p>• Gambar dengan kontras tinggi lebih mudah dideteksi</p>
+                <p>• Threshold rendah = deteksi area gelap</p>
+                <p>• Threshold tinggi = deteksi area terang</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class NavigationGame {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.emptyCanvas = document.getElementById('emptyCanvas');
+                
+                this.mapImage = null;
+                this.roadPoints = [];
+                this.playerPos = { x: 50, y: 50 };
+                this.goalPos = { x: 300, y: 300 };
+                this.path = [];
+                this.moving = false;
+                this.frameCounter = 0;
+                this.moveDelay = 8;
+                
+                this.initializeEvents();
+                this.showEmptyCanvas();
+                this.gameLoop();
+                this.handleResize();
+                window.addEventListener('resize', () => this.handleResize());
+            }
+
+            showEmptyCanvas() {
+                this.canvas.style.display = 'none';
+                this.emptyCanvas.style.display = 'flex';
+            }
+
+            hideEmptyCanvas() {
+                this.canvas.style.display = 'block';
+                this.emptyCanvas.style.display = 'none';
+            }
+
+            handleResize() {
+                if (this.mapImage) {
+                    this.resizeCanvas();
+                    this.redraw();
+                }
+            }
+
+            resizeCanvas() {
+                if (!this.mapImage) return;
+
+                const container = this.canvas.parentElement;
+                const containerWidth = container.clientWidth - 40;
+                const containerHeight = container.clientHeight - 40;
+                
+                const imageAspect = this.mapImage.width / this.mapImage.height;
+                const containerAspect = containerWidth / containerHeight;
+                
+                let newWidth, newHeight;
+                
+                if (imageAspect > containerAspect) {
+                    newWidth = Math.min(containerWidth, this.mapImage.width);
+                    newHeight = newWidth / imageAspect;
+                } else {
+                    newHeight = Math.min(containerHeight, this.mapImage.height);
+                    newWidth = newHeight * imageAspect;
+                }
+                
+                this.canvas.width = newWidth;
+                this.canvas.height = newHeight;
+                this.width = newWidth;
+                this.height = newHeight;
+            }
+
+            loadMapImage(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.mapImage = img;
+                        this.hideEmptyCanvas();
+                        this.resizeCanvas();
+                        this.drawMapWithImage();
+                        
+                        // Auto-detect roads
+                        this.updateStatus('Gambar dimuat! Mendeteksi jalan otomatis...');
+                        setTimeout(() => {
+                            this.detectRoads();
+                        }, 500);
+                        
+                        document.getElementById('imageStatus').textContent = `Gambar: ${file.name}`;
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            drawMapWithImage() {
+                if (this.mapImage) {
+                    this.ctx.drawImage(this.mapImage, 0, 0, this.width, this.height);
+                }
+            }
+
+            detectRoads() {
+                if (!this.mapImage) {
+                    this.updateStatus('Tidak ada gambar peta yang dimuat!');
+                    return;
+                }
+
+                this.updateStatus('🔍 Menganalisis gambar...');
+                
+                const imageData = this.ctx.getImageData(0, 0, this.width, this.height);
+                const data = imageData.data;
+                
+                const threshold = 100;
+                this.roadPoints = [];
+                
+                const step = Math.max(4, Math.floor(Math.min(this.width, this.height) / 150));
+                
+                for (let y = 0; y < this.height; y += step) {
+                    for (let x = 0; x < this.width; x += step) {
+                        const index = (y * this.width + x) * 4;
+                        const r = data[index];
+                        const g = data[index + 1];
+                        const b = data[index + 2];
+                        
+                        const brightness = (r + g + b) / 3;
+                        
+                        if (brightness < threshold) {
+                            if (this.isRoadPixel(x, y, data, threshold)) {
+                                this.roadPoints.push({ x, y });
+                            }
+                        }
+                    }
+                }
+
+                this.roadPoints = this.cleanRoadPoints(this.roadPoints);
+                
+                if (this.roadPoints.length > 0) {
+                    this.playerPos = this.roadPoints[0];
+                    this.goalPos = this.roadPoints[Math.floor(this.roadPoints.length * 0.7)];
+                    this.updateStatus(`✅ Deteksi selesai! Ditemukan ${this.roadPoints.length} titik jalan.`);
+                } else {
+                    this.playerPos = { x: 50, y: 50 };
+                    this.goalPos = { x: this.width - 50, y: this.height - 50 };
+                    this.updateStatus('⚠️ Tidak ada jalan terdeteksi. Coba sesuaikan threshold.');
+                }
+
+                this.redraw();
+            }
+
+            isRoadPixel(x, y, imageData, threshold) {
+                let darkNeighbors = 0;
+                const checkRadius = 2;
+                
+                for (let dy = -checkRadius; dy <= checkRadius; dy++) {
+                    for (let dx = -checkRadius; dx <= checkRadius; dx++) {
+                        if (dx === 0 && dy === 0) continue;
+                        
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        
+                        if (nx >= 0 && nx < this.width && ny >= 0 && ny < this.height) {
+                            const index = (ny * this.width + nx) * 4;
+                            const r = imageData[index];
+                            const g = imageData[index + 1];
+                            const b = imageData[index + 2];
+                            const brightness = (r + g + b) / 3;
+                            
+                            if (brightness < threshold) {
+                                darkNeighbors++;
+                            }
+                        }
+                    }
+                }
+                
+                return darkNeighbors >= 2;
+            }
+
+            cleanRoadPoints(points) {
+                if (points.length === 0) return points;
+                
+                const cleaned = [];
+                const minDistance = Math.max(10, Math.min(this.width, this.height) / 60);
+                
+                for (let point of points) {
+                    let tooClose = false;
+                    for (let existing of cleaned) {
+                        if (this.distance(point, existing) < minDistance) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                    if (!tooClose) {
+                        cleaned.push(point);
+                    }
+                }
+                
+                return cleaned;
+            }
+
+            findNearestPoint(pos) {
+                if (this.roadPoints.length === 0) return pos;
+                
+                let nearest = this.roadPoints[0];
+                let minDist = this.distance(pos, nearest);
+                
+                for (let point of this.roadPoints) {
+                    const dist = this.distance(pos, point);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = point;
+                    }
+                }
+                return nearest;
+            }
+
+            distance(p1, p2) {
+                return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+            }
+
+            aStarPathfinding(start, goal) {
+                if (this.roadPoints.length === 0) return [];
+                
+                const openSet = [{ point: start, f: 0, g: 0 }];
+                const closedSet = new Set();
+                const cameFrom = new Map();
+                const gScore = new Map();
+
+                gScore.set(this.pointToString(start), 0);
+
+                while (openSet.length > 0) {
+                    openSet.sort((a, b) => a.f - b.f);
+                    const current = openSet.shift();
+                    const currentStr = this.pointToString(current.point);
+
+                    if (this.distance(current.point, goal) < 20) {
+                        const path = [];
+                        let temp = current.point;
+                        while (cameFrom.has(this.pointToString(temp))) {
+                            path.unshift(temp);
+                            temp = cameFrom.get(this.pointToString(temp));
+                        }
+                        return path;
+                    }
+
+                    closedSet.add(currentStr);
+
+                    const maxDistance = Math.min(50, Math.max(this.width, this.height) / 15);
+
+                    for (let neighbor of this.roadPoints) {
+                        const neighborStr = this.pointToString(neighbor);
+                        if (closedSet.has(neighborStr)) continue;
+                        
+                        const dist = this.distance(current.point, neighbor);
+                        if (dist > maxDistance) continue;
+
+                        const tentativeG = gScore.get(currentStr) + dist;
+                        
+                        if (!gScore.has(neighborStr) || tentativeG < gScore.get(neighborStr)) {
+                            cameFrom.set(neighborStr, current.point);
+                            gScore.set(neighborStr, tentativeG);
+                            
+                            const f = tentativeG + this.distance(neighbor, goal);
+                            
+                            if (!openSet.find(item => this.pointToString(item.point) === neighborStr)) {
+                                openSet.push({
+                                    point: neighbor,
+                                    f: f,
+                                    g: tentativeG
+                                });
+                            }
+                        }
+                    }
+                }
+                return [];
+            }
+
+            pointToString(point) {
+                return `${Math.round(point.x)},${Math.round(point.y)}`;
+            }
+
+            drawTriangle(pos, angle) {
+                const size = Math.max(10, Math.min(this.width, this.height) / 40);
+                this.ctx.fillStyle = '#ff0000';
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 2;
+                
+                this.ctx.beginPath();
+                this.ctx.moveTo(
+                    pos.x + size * Math.cos(angle),
+                    pos.y + size * Math.sin(angle)
+                );
+                this.ctx.lineTo(
+                    pos.x + size * Math.cos(angle + 2.5),
+                    pos.y + size * Math.sin(angle + 2.5)
+                );
+                this.ctx.lineTo(
+                    pos.x + size * Math.cos(angle - 2.5),
+                    pos.y + size * Math.sin(angle - 2.5)
+                );
+                this.ctx.closePath();
+                this.ctx.fill();
+                this.ctx.stroke();
+            }
+
+            redraw() {
+                if (!this.mapImage) return;
+
+                this.ctx.clearRect(0, 0, this.width, this.height);
+                this.drawMapWithImage();
+                
+                // Draw road points
+                this.ctx.fillStyle = 'rgba(0, 255, 0, 0.4)';
+                for (let point of this.roadPoints) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                }
+                
+                // Draw goal
+                const goalSize = Math.max(8, Math.min(this.width, this.height) / 50);
+                this.ctx.fillStyle = '#0000ff';
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.arc(this.goalPos.x, this.goalPos.y, goalSize, 0, 2 * Math.PI);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                // Draw path
+                if (this.path.length > 0) {
+                    this.ctx.strokeStyle = '#ff00ff';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.setLineDash([5, 5]);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.playerPos.x, this.playerPos.y);
+                    for (let point of this.path) {
+                        this.ctx.lineTo(point.x, point.y);
+                    }
+                    this.ctx.stroke();                }
+
+                // Draw player
+                let angle = 0;
+                if (this.path.length > 0) {
+                    const next = this.path[0];
+                    angle = Math.atan2(next.y - this.playerPos.y, next.x - this.playerPos.x);
+                }
+                this.drawTriangle(this.playerPos, angle);
+            }
+
+            gameLoop() {
+                if (this.moving && this.path.length > 0) {
+                    const target = this.path[0];
+                    const dx = target.x - this.playerPos.x;
+                    const dy = target.y - this.playerPos.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const speed = 2;
+
+                    if (dist < speed) {
+                        this.playerPos = target;
+                        this.path.shift();
+                        if (this.path.length === 0) {
+                            this.moving = false;
+                            this.updateStatus('🎯 Tujuan tercapai!');
+                        }
+                    } else {
+                        this.playerPos.x += (dx / dist) * speed;
+                        this.playerPos.y += (dy / dist) * speed;
+                    }
+                    this.redraw();
+                }
+
+                requestAnimationFrame(() => this.gameLoop());
+            }
+
+            initializeEvents() {
+                document.getElementById('mapImageInput').addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        this.loadMapImage(file);
+                    }
+                });
+
+                
+
+                document.getElementById('startBtn').addEventListener('click', () => {
+                    if (!this.mapImage) {
+                        this.updateStatus('❌ Upload gambar peta terlebih dahulu!');
+                        return;
+                    }
+                    
+                    this.path = this.aStarPathfinding(this.playerPos, this.goalPos);
+                    if (this.path.length > 0) {
+                        this.moving = true;
+                        this.updateStatus('🚗 Navigasi dimulai...');
+                    } else {
+                        this.updateStatus('❌ Tidak ada jalur ditemukan! Coba ubah threshold.');
+                    }
+                });
+
+                document.getElementById('stopBtn').addEventListener('click', () => {
+                    this.moving = false;
+                    this.path = [];
+                    this.updateStatus('⏹️ Navigasi dihentikan.');
+                    this.redraw();
+                });
+
+                document.getElementById('randomBtn').addEventListener('click', () => {
+                    if (!this.mapImage) {
+                        this.updateStatus('❌ Upload gambar peta terlebih dahulu!');
+                        return;
+                    }
+
+                    if (this.roadPoints.length > 0) {
+                        this.playerPos = this.roadPoints[Math.floor(Math.random() * this.roadPoints.length)];
+                        this.goalPos = this.roadPoints[Math.floor(Math.random() * this.roadPoints.length)];
+                    } else {
+                        this.playerPos = { 
+                            x: Math.random() * (this.width - 100) + 50,
+                            y: Math.random() * (this.height - 100) + 50
+                        };
+                        this.goalPos = { 
+                            x: Math.random() * (this.width - 100) + 50,
+                            y: Math.random() * (this.height - 100) + 50
+                        };
+                    }
+                    this.path = [];
+                    this.moving = false;
+                    this.updateStatus('🎲 Posisi acak diatur.');
+                    this.redraw();
+                });
+
+                this.canvas.addEventListener('click', (e) => {
+                    if (!this.mapImage) return;
+
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    if (e.ctrlKey) {
+                        this.goalPos = this.findNearestPoint({ x, y });
+                        this.updateStatus('🎯 Tujuan baru diatur!');
+                    } else {
+                        this.playerPos = this.findNearestPoint({ x, y });
+                        this.updateStatus('📍 Posisi player diatur!');
+                    }
+                    this.path = [];
+                    this.moving = false;
+                    this.redraw();
+                });
+            }
+
+            updateStatus(message) {
+                document.getElementById('statusText').textContent = message;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            new NavigationGame();
+        });
+    </script>
+</body>
+</html>
